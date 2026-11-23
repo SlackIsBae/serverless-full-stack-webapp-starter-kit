@@ -7,7 +7,7 @@ test('E02: unauthenticated root request redirects to sign-in', async ({ browser 
   try {
     await page.goto('/');
     await expect(page).toHaveURL(/\/sign-in$/);
-    await expect(page.getByRole('heading', { name: 'Todo App' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Taskboard' })).toBeVisible();
   } finally {
     await context.close();
   }
