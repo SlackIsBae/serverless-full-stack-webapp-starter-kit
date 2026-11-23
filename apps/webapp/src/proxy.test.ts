@@ -66,14 +66,14 @@ describe('proxy (optimistic auth check)', () => {
   });
 });
 
+function request(path: string, headers: Record<string, string> = {}) {
+  return new NextRequest(new URL(`https://app.example.com${path}`), { headers });
+}
+
 describe('proxy (CloudFront origin check)', () => {
   const SECRET = 'stack-uuid-secret';
   const originalSecret = process.env.ORIGIN_VERIFY_SECRET;
   const originalClient = process.env.USER_POOL_CLIENT_ID;
-
-  function request(path: string, headers: Record<string, string> = {}) {
-    return new NextRequest(new URL(`https://app.example.com${path}`), { headers });
-  }
 
   beforeEach(() => {
     process.env.ORIGIN_VERIFY_SECRET = SECRET;
