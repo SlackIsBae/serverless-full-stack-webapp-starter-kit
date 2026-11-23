@@ -4,10 +4,11 @@ Taskboard is the team's internal task tracker, running in production in AWS us-e
 
 ## How changes reach production
 
-- Work on a branch and open a pull request against `main`. Never push to `main`; it is protected and requires passing CI plus a human approval.
-- Humans merge and then deploy from a laptop with `cd apps/cdk && pnpm exec cdk deploy --all`. CI has no AWS credentials, on purpose.
+- Work on a branch and open a pull request against `main`. Never push to `main`; it is protected and requires passing CI (`Build-and-Test`, PR title `lint`).
+- **Merging to `main` deploys to production.** The `Deploy` workflow (`.github/workflows/deploy.yml`) runs `cdk deploy` after `Build` passes on `main`. Every merge is a production change, so every PR must be safe to deploy as is.
+- PRs that only change application code (for example `apps/webapp/src`, `apps/async-job/src`, `packages/*/src`) can merge as soon as CI passes. PRs that touch infrastructure, CI, dependencies, Dockerfiles, migrations, or agent instructions need approval from a code owner first (see `.github/CODEOWNERS`). Prefer solving a request in application code; if it truly needs one of those paths, say so in the PR body.
 - Agents never deploy, destroy, or change AWS resources directly: no `cdk deploy`, `cdk destroy`, `cdk bootstrap`, or mutating AWS CLI/SDK calls. Read-only investigation (CloudWatch logs and metrics, `cdk diff`, `cdk synth`) is fine.
-- `main` must always match what is deployed, so every PR should be safe to deploy as soon as it merges.
+- If a merged change breaks production, revert it with a new PR (`revert: ...`). The team can also reset production to the `demo-baseline` tag with `scripts/demo-reset.sh`; do not move or delete that tag.
 
 ## Pull request checklist
 
@@ -43,7 +44,7 @@ cd apps/webapp && pnpm run lint
 cd apps/cdk && pnpm run build
 cd apps/cdk && pnpm run test:unit
 cd apps/cdk && pnpm exec cdk diff
-cd apps/cdk && pnpm exec cdk deploy --all   # humans only, after merge
+cd apps/cdk && pnpm exec cdk deploy --all   # humans only; merging to main deploys automatically
 
 # db migration (requires DSQL cluster; never run against production, deploys apply migrations)
 pnpm --filter @repo/db run migrate

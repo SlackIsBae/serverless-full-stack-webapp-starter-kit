@@ -1,0 +1,29 @@
+# Changes to these paths need approval from @SlackIsBae before they can merge, because merging
+# deploys to production automatically. Everything else (app code under src/) merges on green CI.
+# See AGENTS.md "How changes reach production".
+
+# CI, deploy workflow, and this file
+/.github/                       @SlackIsBae
+
+# Infrastructure and the deploy role template
+/apps/cdk/                      @SlackIsBae
+/infra/                         @SlackIsBae
+
+# Build inputs: dependencies, lockfile, toolchain, container images
+package.json                    @SlackIsBae
+/pnpm-lock.yaml                 @SlackIsBae
+/pnpm-workspace.yaml            @SlackIsBae
+Dockerfile                      @SlackIsBae
+/.dockerignore                  @SlackIsBae
+/oxlintrc.json                  @SlackIsBae
+/apps/webapp/next.config.ts     @SlackIsBae
+
+# Database migrations (cannot be undone by reverting code)
+/packages/db/migrations/        @SlackIsBae
+
+# Instructions that coding agents follow
+/AGENTS.md                      @SlackIsBae
+/.kiro/                         @SlackIsBae
+
+# Demo reset tooling
+/scripts/                       @SlackIsBae

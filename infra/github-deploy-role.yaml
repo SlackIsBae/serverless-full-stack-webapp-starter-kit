@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Lets the Taskboard GitHub Actions deploy workflow run `cdk deploy`. Deployed by hand,
+  never by the workflow itself, so a merged change cannot widen its own permissions.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: SlackIsBae/taskboard-app
+  GitHubEnvironment:
+    Type: String
+    Default: production
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: taskboard-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                # Only jobs that run in the protected `production` environment (main branch only).
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:environment:${GitHubEnvironment}
+      Policies:
+        - PolicyName: AssumeCdkBootstrapRoles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # `cdk deploy` only needs to assume the bootstrap roles in this account and region.
+              - Effect: Allow
+                Action: sts:AssumeRole
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-*-role-${AWS::AccountId}-${AWS::Region}
+
+Outputs:
+  DeployRoleArn:
+    Value: !GetAtt DeployRole.Arn
