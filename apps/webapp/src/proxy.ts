@@ -2,7 +2,19 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Optimistic auth check: verifies only the presence of the Cognito cookie.
+ * CloudFront adds this header (value = ORIGIN_VERIFY_SECRET) to every origin request.
+ * The Lambda Function URL is public, so this check rejects requests that bypass CloudFront.
+ * Must match ORIGIN_VERIFY_HEADER in apps/cdk/lib/constructs/cf-lambda-furl-service/service.ts.
+ */
+export const ORIGIN_VERIFY_HEADER = 'x-origin-verify';
+
+/** Paths that skip the optimistic auth check (API routes and the sign-in page itself). */
+const PUBLIC_PATH_PREFIXES = ['/api', '/sign-in'];
+
+/**
+ * 1. Origin check: when ORIGIN_VERIFY_SECRET is set (deployed), reject requests without the
+ *    CloudFront secret header. Unset in local development, so the check is skipped there.
+ * 2. Optimistic auth check: verifies only the presence of the Cognito cookie.
  *
  * Why not fetchAuthSession here:
  * - On a Lambda cold start, the JWKS fetch inside fetchAuthSession can block
@@ -13,6 +25,15 @@ import type { NextRequest } from 'next/server';
  * @see https://nextjs.org/docs/app/guides/authentication#optimistic-checks-with-proxy-optional
  */
 export function proxy(request: NextRequest) {
+  const originSecret = process.env.ORIGIN_VERIFY_SECRET;
+  if (originSecret && request.headers.get(ORIGIN_VERIFY_HEADER) !== originSecret) {
+    return new NextResponse('Forbidden', { status: 403, headers: { 'Content-Type': 'text/plain' } });
+  }
+
+  if (PUBLIC_PATH_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix))) {
+    return NextResponse.next();
+  }
+
   const clientId = process.env.USER_POOL_CLIENT_ID;
   if (!clientId) {
     // Misconfiguration, not a bypass: without the client id we cannot name the
@@ -45,12 +66,12 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - sign-in (the sign-in page itself)
+     * API routes and /sign-in are matched so the origin check covers them; they skip the
+     * auth check inside proxy() (PUBLIC_PATH_PREFIXES).
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|sign-in).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };

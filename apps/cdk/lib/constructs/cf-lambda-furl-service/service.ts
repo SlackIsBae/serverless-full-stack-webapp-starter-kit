@@ -1,12 +1,11 @@
 import { Construct } from 'constructs';
-import { Aws, Duration } from 'aws-cdk-lib';
-import { FunctionUrlAuthType, Function, InvokeMode, CfnPermission } from 'aws-cdk-lib/aws-lambda';
+import { Aws, Duration, Fn } from 'aws-cdk-lib';
+import { FunctionUrlAuthType, Function, InvokeMode } from 'aws-cdk-lib/aws-lambda';
 import {
   AllowedMethods,
   CachePolicy,
   Distribution,
   GeoRestriction,
-  LambdaEdgeEventType,
   OriginRequestPolicy,
   SecurityPolicyProtocol,
 } from 'aws-cdk-lib/aws-cloudfront';
@@ -16,8 +15,13 @@ import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { EdgeFunction } from './edge-function';
 import { AwsCustomResource, PhysicalResourceId, AwsCustomResourcePolicy } from 'aws-cdk-lib/custom-resources';
+
+/**
+ * Header CloudFront adds to every origin request. The webapp rejects requests without it.
+ * Must match ORIGIN_VERIFY_HEADER in apps/webapp/src/proxy.ts.
+ */
+export const ORIGIN_VERIFY_HEADER = 'x-origin-verify';
 
 export interface CloudFrontLambdaFunctionUrlServiceProps {
   /**
@@ -51,20 +55,7 @@ export interface CloudFrontLambdaFunctionUrlServiceProps {
    * @default No custom domain.
    */
   certificate?: ICertificate;
-  signPayloadHandler: EdgeFunction;
   accessLogBucket: Bucket;
-
-  /**
-   * ARN of a WAF Web ACL (scope=CLOUDFRONT, must be created in us-east-1) to associate
-   * with the distribution.
-   *
-   * Required to enroll the distribution in a CloudFront flat-rate pricing plan
-   * (Free/Pro/Business/Premium), which mandates an associated Web ACL. Leave unset for
-   * the default pay-as-you-go setup (no Web ACL is associated).
-   *
-   * @default No Web ACL is associated (pay-as-you-go).
-   */
-  webAclId?: string;
 
   /**
    * Geographic restriction for the distribution (e.g. `GeoRestriction.allowlist('JP')`).
@@ -81,29 +72,28 @@ export class CloudFrontLambdaFunctionUrlService extends Construct {
 
   constructor(scope: Construct, id: string, props: CloudFrontLambdaFunctionUrlServiceProps) {
     super(scope, id);
-    const {
-      handler,
-      serviceName,
-      subDomain,
-      hostedZone,
-      certificate,
-      accessLogBucket,
-      signPayloadHandler,
-      webAclId,
-      geoRestriction,
-    } = props;
+    const { handler, serviceName, subDomain, hostedZone, certificate, accessLogBucket, geoRestriction } = props;
     let domainName = '';
     if (hostedZone) {
       domainName = subDomain ? `${subDomain}.${hostedZone.zoneName}` : hostedZone.zoneName;
     }
 
+    // Single-region fork: the upstream kit protects the Function URL with AWS_IAM auth + CloudFront
+    // OAC, which needs a Lambda@Edge signer (us-east-1 only) to hash POST bodies. Instead, the URL
+    // is public (auth NONE) and CloudFront adds a secret header that the app's proxy.ts verifies,
+    // so requests that bypass CloudFront get a 403. The secret is the stack ID's UUID: stable across
+    // deploys and only visible to principals in this account.
+    const originVerifySecret = Fn.select(2, Fn.split('/', Aws.STACK_ID));
+    handler.addEnvironment('ORIGIN_VERIFY_SECRET', originVerifySecret);
+
     const furl = handler.addFunctionUrl({
-      authType: FunctionUrlAuthType.AWS_IAM,
+      authType: FunctionUrlAuthType.NONE,
       invokeMode: InvokeMode.RESPONSE_STREAM,
     });
-    const origin = FunctionUrlOrigin.withOriginAccessControl(furl, {
+    const origin = new FunctionUrlOrigin(furl, {
       connectionTimeout: Duration.seconds(6),
       readTimeout: Duration.seconds(60),
+      customHeaders: { [ORIGIN_VERIFY_HEADER]: originVerifySecret },
     });
 
     // CloudFront flat-rate pricing plan (Free/Pro) compatibility: custom cache policies are
@@ -122,16 +112,8 @@ export class CloudFrontLambdaFunctionUrlService extends Construct {
     // assets are cached at the edge instead of hitting the Lambda origin on every request. These
     // assets are public and vary only by path, so the managed policy's cache key (no cookies, no
     // query strings) is safe; Next.js serves them with `Cache-Control: public, max-age=31536000,
-    // immutable`. The origin-request signer runs only on cache misses. This is a second cache
+    // immutable`. This is a second cache
     // behavior (flat-rate Free allows up to 5).
-    const edgeLambdas = [
-      {
-        functionVersion: signPayloadHandler.versionArn(this),
-        eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-        includeBody: true,
-      },
-    ];
-
     const distribution = new Distribution(this, 'Resource', {
       comment: `CloudFront for ${serviceName}`,
       defaultBehavior: {
@@ -139,7 +121,6 @@ export class CloudFrontLambdaFunctionUrlService extends Construct {
         cachePolicy: CachePolicy.CACHING_DISABLED,
         allowedMethods: AllowedMethods.ALLOW_ALL,
         originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-        edgeLambdas,
       },
       additionalBehaviors: {
         '/_next/static/*': {
@@ -147,7 +128,6 @@ export class CloudFrontLambdaFunctionUrlService extends Construct {
           cachePolicy: CachePolicy.CACHING_OPTIMIZED,
           allowedMethods: AllowedMethods.ALLOW_GET_HEAD,
           originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-          edgeLambdas,
         },
       },
       // errorResponses: [{ httpStatus: 404, responsePagePath: '/', responseHttpStatus: 200 }],
@@ -156,23 +136,10 @@ export class CloudFrontLambdaFunctionUrlService extends Construct {
 
       ...(hostedZone ? { certificate: certificate, domainNames: [domainName] } : {}),
 
-      // Associate a WAF Web ACL / geo restriction only when provided (required for flat-rate plans).
-      ...(webAclId ? { webAclId } : {}),
+      // Geo restriction only when provided.
       ...(geoRestriction ? { geoRestriction } : {}),
 
       minimumProtocolVersion: SecurityPolicyProtocol.TLS_V1_2_2021,
-    });
-
-    // Starting October 2025, new function URLs require both lambda:InvokeFunctionUrl
-    // and lambda:InvokeFunction permissions for CloudFront OAC.
-    // CDK's FunctionUrlOrigin.withOriginAccessControl only adds lambda:InvokeFunctionUrl,
-    // so we explicitly add lambda:InvokeFunction here.
-    // See: https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html
-    new CfnPermission(this, 'InvokeFunctionPermission', {
-      action: 'lambda:InvokeFunction',
-      functionName: handler.functionArn,
-      principal: 'cloudfront.amazonaws.com',
-      sourceArn: `arn:${Aws.PARTITION}:cloudfront::${Aws.ACCOUNT_ID}:distribution/${distribution.distributionId}`,
     });
 
     if (hostedZone) {

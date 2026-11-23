@@ -3,22 +3,12 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { GeoRestriction } from 'aws-cdk-lib/aws-cloudfront';
 import { MainStack } from '../lib/main-stack';
-import { UsEast1Stack } from '../lib/us-east-1-stack';
 
 const app = new cdk.App();
 
 interface EnvironmentProps {
   account: string;
-
-  /**
-   * Custom domain name for the webapp and Cognito.
-   * You need to have a public Route53 hosted zone for the domain name in your AWS account.
-   *
-   * @default No custom domain name. When not specified, the stack automatically generates
-   * a random prefix for the Cognito domain (e.g., webapp-abc123def4.auth.us-west-2.amazoncognito.com)
-   * and uses the CloudFront default domain (e.g., d1234567890.cloudfront.net) for the webapp.
-   */
-  domainName?: string;
+  region: string;
 
   /**
    * Geographic restriction for the CloudFront distribution
@@ -29,30 +19,22 @@ interface EnvironmentProps {
   geoRestriction?: GeoRestriction;
 }
 
+// Single-region deployment: everything is deployed to one region (us-east-2 by default).
+// The upstream kit also deploys a us-east-1 stack (Lambda@Edge payload signer, WAF Web ACL,
+// custom-domain ACM certificate). This fork drops it because the target account only allows
+// one region. CloudFront reaches the Lambda Function URL with a secret origin header instead of
+// Lambda@Edge + OAC signing, and the app uses the default CloudFront / Cognito domains.
 const props: EnvironmentProps = {
   account: process.env.CDK_DEFAULT_ACCOUNT!,
-  // domainName: 'FIXME.example.com',
+  region: process.env.CDK_DEFAULT_REGION ?? 'us-east-2',
   // geoRestriction: GeoRestriction.allowlist('JP'),
 };
 
-const virginia = new UsEast1Stack(app, 'ServerlessWebappStarterKitUsEast1Stack', {
-  env: {
-    account: props.account,
-    region: 'us-east-1',
-  },
-  crossRegionReferences: true,
-  domainName: props.domainName,
-});
 new MainStack(app, 'ServerlessWebappStarterKitStack', {
   env: {
     account: props.account,
-    region: process.env.CDK_DEFAULT_REGION,
+    region: props.region,
   },
-  crossRegionReferences: true,
-  sharedCertificate: virginia.certificate,
-  domainName: props.domainName,
-  signPayloadHandler: virginia.signPayloadHandler,
-  webAclId: virginia.webAclArn,
   geoRestriction: props.geoRestriction,
 });
 

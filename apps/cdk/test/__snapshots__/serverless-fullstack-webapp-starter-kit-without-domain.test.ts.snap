@@ -2,265 +2,6 @@
 
 exports[`Snapshot test 1`] = `
 {
-  "Parameters": {
-    "BootstrapVersion": {
-      "Default": "/cdk-bootstrap/hnb659fds/version",
-      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
-      "Type": "AWS::SSM::Parameter::Value<String>",
-    },
-  },
-  "Resources": {
-    "CustomCrossRegionExportWriterCustomResourceProviderHandlerD8786E8A": {
-      "DependsOn": [
-        "CustomCrossRegionExportWriterCustomResourceProviderRoleC951B1E1",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "REDACTED",
-        },
-        "Handler": "__entrypoint__.handler",
-        "MemorySize": 128,
-        "Role": {
-          "Fn::GetAtt": [
-            "CustomCrossRegionExportWriterCustomResourceProviderRoleC951B1E1",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "CustomCrossRegionExportWriterCustomResourceProviderRoleC951B1E1": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-          },
-        ],
-        "Policies": [
-          {
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Action": [
-                    "ssm:DeleteParameters",
-                    "ssm:ListTagsForResource",
-                    "ssm:GetParameters",
-                    "ssm:PutParameter",
-                  ],
-                  "Effect": "Allow",
-                  "Resource": [
-                    {
-                      "Fn::Join": [
-                        "",
-                        [
-                          "arn:",
-                          {
-                            "Ref": "AWS::Partition",
-                          },
-                          ":ssm:us-west-2:123456789012:parameter/cdk/exports/*",
-                        ],
-                      ],
-                    },
-                  ],
-                },
-              ],
-              "Version": "2012-10-17",
-            },
-            "PolicyName": "Inline",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "ExportsWriteruswest209BD44F0A7CF058B": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "CustomCrossRegionExportWriterCustomResourceProviderHandlerD8786E8A",
-            "Arn",
-          ],
-        },
-        "WriterProps": {
-          "exports": {
-            "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1FnGetAttWebAclArn95310D3C": {
-              "Fn::GetAtt": [
-                "WebAcl",
-                "Arn",
-              ],
-            },
-            "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA": {
-              "Ref": "SignPayloadHandlerFunctionVersionF9FE430A",
-            },
-          },
-          "region": "us-west-2",
-        },
-      },
-      "Type": "Custom::CrossRegionExportWriter",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "SignPayloadHandlerCFEAA14C": {
-      "DependsOn": [
-        "SignPayloadHandlerServiceRole29261232",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "REDACTED",
-        },
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "SignPayloadHandlerServiceRole29261232",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs22.x",
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "SignPayloadHandlerCurrentVersionREDACTED": {
-      "DeletionPolicy": "Retain",
-      "Metadata": {
-        "aws:cdk:do-not-refactor": true,
-      },
-      "Properties": {
-        "FunctionName": {
-          "Ref": "SignPayloadHandlerCFEAA14C",
-        },
-      },
-      "Type": "AWS::Lambda::Version",
-      "UpdateReplacePolicy": "Retain",
-    },
-    "SignPayloadHandlerFunctionVersionF9FE430A": {
-      "Properties": {
-        "Type": "String",
-        "Value": {
-          "Ref": "SignPayloadHandlerCurrentVersionREDACTED",
-        },
-      },
-      "Type": "AWS::SSM::Parameter",
-    },
-    "SignPayloadHandlerServiceRole29261232": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "edgelambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "WebAcl": {
-      "Properties": {
-        "DefaultAction": {
-          "Allow": {},
-        },
-        "Rules": [
-          {
-            "Name": "AWSManagedKnownBadInputs",
-            "OverrideAction": {
-              "None": {},
-            },
-            "Priority": 1,
-            "Statement": {
-              "ManagedRuleGroupStatement": {
-                "Name": "AWSManagedRulesKnownBadInputsRuleSet",
-                "VendorName": "AWS",
-              },
-            },
-            "VisibilityConfig": {
-              "CloudWatchMetricsEnabled": true,
-              "MetricName": "KnownBadInputs",
-              "SampledRequestsEnabled": true,
-            },
-          },
-        ],
-        "Scope": "CLOUDFRONT",
-        "VisibilityConfig": {
-          "CloudWatchMetricsEnabled": true,
-          "MetricName": "WebappWebAcl",
-          "SampledRequestsEnabled": true,
-        },
-      },
-      "Type": "AWS::WAFv2::WebACL",
-    },
-  },
-  "Rules": {
-    "CheckBootstrapVersion": {
-      "Assertions": [
-        {
-          "Assert": {
-            "Fn::Not": [
-              {
-                "Fn::Contains": [
-                  [
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5",
-                  ],
-                  {
-                    "Ref": "BootstrapVersion",
-                  },
-                ],
-              },
-            ],
-          },
-          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
-        },
-      ],
-    },
-  },
-}
-`;
-
-exports[`Snapshot test 2`] = `
-{
   "Description": "Serverless fullstack webapp stack (uksb-1tupboc47)",
   "Outputs": {
     "AsyncJobHandlerArnCA46B385": {
@@ -287,7 +28,7 @@ exports[`Snapshot test 2`] = `
                 "generated",
               ],
             },
-            ".auth.us-west-2.amazoncognito.com",
+            ".auth.us-east-2.amazoncognito.com",
           ],
         ],
       },
@@ -371,7 +112,7 @@ exports[`Snapshot test 2`] = `
       ],
       "Properties": {
         "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-2",
           "S3Key": "REDACTED",
         },
         "Handler": "index.handler",
@@ -423,7 +164,7 @@ exports[`Snapshot test 2`] = `
       ],
       "Properties": {
         "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-2",
           "S3Key": "REDACTED",
         },
         "Handler": "__entrypoint__.handler",
@@ -699,7 +440,7 @@ exports[`Snapshot test 2`] = `
             ],
           ],
         },
-        "sourceS3Url": "s3://cdk-hnb659fds-assets-123456789012-us-west-2/REDACTED",
+        "sourceS3Url": "s3://cdk-hnb659fds-assets-123456789012-us-east-2/REDACTED",
         "type": "ContainerImageBuild",
       },
       "Type": "Custom::CDKContainerImageBuild",
@@ -893,7 +634,7 @@ exports[`Snapshot test 2`] = `
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":dsql:us-west-2:123456789012:cluster/",
+                    ":dsql:us-east-2:123456789012:cluster/",
                     {
                       "Fn::GetAtt": [
                         "DatabaseClusterC6094C50",
@@ -915,7 +656,7 @@ exports[`Snapshot test 2`] = `
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":appsync:us-west-2:123456789012:apis/",
+                    ":appsync:us-east-2:123456789012:apis/",
                     {
                       "Fn::GetAtt": [
                         "EventBusApi6E8C7C94",
@@ -1324,7 +1065,7 @@ exports[`Snapshot test 2`] = `
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":logs:us-west-2:123456789012:log-group:/aws/codebuild/",
+                      ":logs:us-east-2:123456789012:log-group:/aws/codebuild/",
                       {
                         "Ref": "ContainerImageBuildArm64e83729feb1564e709bec452b15847a30amd64C13E3549",
                       },
@@ -1339,7 +1080,7 @@ exports[`Snapshot test 2`] = `
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":logs:us-west-2:123456789012:log-group:/aws/codebuild/",
+                      ":logs:us-east-2:123456789012:log-group:/aws/codebuild/",
                       {
                         "Ref": "ContainerImageBuildArm64e83729feb1564e709bec452b15847a30amd64C13E3549",
                       },
@@ -1366,7 +1107,7 @@ exports[`Snapshot test 2`] = `
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":codebuild:us-west-2:123456789012:report-group/",
+                    ":codebuild:us-east-2:123456789012:report-group/",
                     {
                       "Ref": "ContainerImageBuildArm64e83729feb1564e709bec452b15847a30amd64C13E3549",
                     },
@@ -1424,7 +1165,7 @@ exports[`Snapshot test 2`] = `
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":s3:::cdk-hnb659fds-assets-123456789012-us-west-2",
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-2",
                     ],
                   ],
                 },
@@ -1436,7 +1177,7 @@ exports[`Snapshot test 2`] = `
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":s3:::cdk-hnb659fds-assets-123456789012-us-west-2/*",
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-2/*",
                     ],
                   ],
                 },
@@ -1482,87 +1223,13 @@ exports[`Snapshot test 2`] = `
       },
       "Type": "AWS::IAM::Policy",
     },
-    "CustomCrossRegionExportReaderCustomResourceProviderHandler46647B68": {
-      "DependsOn": [
-        "CustomCrossRegionExportReaderCustomResourceProviderRole10531BBD",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
-          "S3Key": "REDACTED",
-        },
-        "Handler": "__entrypoint__.handler",
-        "MemorySize": 128,
-        "Role": {
-          "Fn::GetAtt": [
-            "CustomCrossRegionExportReaderCustomResourceProviderRole10531BBD",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "CustomCrossRegionExportReaderCustomResourceProviderRole10531BBD": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-          },
-        ],
-        "Policies": [
-          {
-            "PolicyDocument": {
-              "Statement": [
-                {
-                  "Action": [
-                    "ssm:AddTagsToResource",
-                    "ssm:RemoveTagsFromResource",
-                    "ssm:GetParameters",
-                  ],
-                  "Effect": "Allow",
-                  "Resource": {
-                    "Fn::Join": [
-                      "",
-                      [
-                        "arn:",
-                        {
-                          "Ref": "AWS::Partition",
-                        },
-                        ":ssm:us-west-2:123456789012:parameter/cdk/exports/ServerlessWebappStarterKitStack/*",
-                      ],
-                    ],
-                  },
-                },
-              ],
-              "Version": "2012-10-17",
-            },
-            "PolicyName": "Inline",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
     "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
       "DependsOn": [
         "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
       ],
       "Properties": {
         "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-2",
           "S3Key": "REDACTED",
         },
         "Description": {
@@ -1633,7 +1300,7 @@ exports[`Snapshot test 2`] = `
       ],
       "Properties": {
         "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-2",
           "S3Key": "REDACTED",
         },
         "Handler": "index.handler",
@@ -1715,7 +1382,7 @@ exports[`Snapshot test 2`] = `
           "arm64",
         ],
         "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-west-2",
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-2",
           "S3Key": "REDACTED",
         },
         "Environment": {
@@ -1803,7 +1470,7 @@ exports[`Snapshot test 2`] = `
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":dsql:us-west-2:123456789012:cluster/",
+                    ":dsql:us-east-2:123456789012:cluster/",
                     {
                       "Fn::GetAtt": [
                         "DatabaseClusterC6094C50",
@@ -1866,7 +1533,7 @@ exports[`Snapshot test 2`] = `
             {
               "AuthType": "AMAZON_COGNITO_USER_POOLS",
               "CognitoConfig": {
-                "AwsRegion": "us-west-2",
+                "AwsRegion": "us-east-2",
                 "UserPoolId": {
                   "Ref": "AuthUserPool8115E87F",
                 },
@@ -1907,117 +1574,11 @@ exports[`Snapshot test 2`] = `
             "ApiId",
           ],
         },
-        "CodeS3Location": "s3://cdk-hnb659fds-assets-123456789012-us-west-2/REDACTED",
+        "CodeS3Location": "s3://cdk-hnb659fds-assets-123456789012-us-east-2/REDACTED",
         "HandlerConfigs": {},
         "Name": "event-bus",
       },
       "Type": "AWS::AppSync::ChannelNamespace",
-    },
-    "ExportsReader8B249524": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "ReaderProps": {
-          "imports": {
-            "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1FnGetAttWebAclArn95310D3C": "{{resolve:ssm:/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1FnGetAttWebAclArn95310D3C}}",
-            "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA": "{{resolve:ssm:/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA}}",
-          },
-          "prefix": "ServerlessWebappStarterKitStack",
-          "region": "us-west-2",
-        },
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "CustomCrossRegionExportReaderCustomResourceProviderHandler46647B68",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::CrossRegionExportReader",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "LookupVersionArnc8730278af02f875114ca902814c77b68f19b0087110E04D0A": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "LookupVersionArnc8730278af02f875114ca902814c77b68f19b00871CustomResourcePolicy7CD24C5F",
-      ],
-      "Properties": {
-        "Create": {
-          "Fn::Join": [
-            "",
-            [
-              "{"service":"SSM","action":"getParameter","parameters":{"Name":"",
-              {
-                "Fn::GetAtt": [
-                  "ExportsReader8B249524",
-                  "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA",
-                ],
-              },
-              ""},"physicalResourceId":{"id":"1577836800000"},"region":"us-east-1"}",
-            ],
-          ],
-        },
-        "InstallLatestAwsSdk": true,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
-            "Arn",
-          ],
-        },
-        "Update": {
-          "Fn::Join": [
-            "",
-            [
-              "{"service":"SSM","action":"getParameter","parameters":{"Name":"",
-              {
-                "Fn::GetAtt": [
-                  "ExportsReader8B249524",
-                  "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA",
-                ],
-              },
-              ""},"physicalResourceId":{"id":"1577836800000"},"region":"us-east-1"}",
-            ],
-          ],
-        },
-      },
-      "Type": "Custom::AWS",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "LookupVersionArnc8730278af02f875114ca902814c77b68f19b00871CustomResourcePolicy7CD24C5F": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "ssm:GetParameter",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    "arn:",
-                    {
-                      "Ref": "AWS::Partition",
-                    },
-                    ":ssm:us-east-1:123456789012:parameter/",
-                    {
-                      "Fn::GetAtt": [
-                        "ExportsReader8B249524",
-                        "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1RefSignPayloadHandlerFunctionVersionF9FE430A3006B9FA",
-                      ],
-                    },
-                  ],
-                ],
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "LookupVersionArnc8730278af02f875114ca902814c77b68f19b00871CustomResourcePolicy7CD24C5F",
-        "Roles": [
-          {
-            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
     },
     "RandomStringGenerator11e9c903f11a4989833c985dddef5eb28C5103D0": {
       "DependsOn": [
@@ -2139,7 +1700,7 @@ exports.handler = async function (event, context) {
                         {
                           "Ref": "AWS::Partition",
                         },
-                        ":scheduler:us-west-2:123456789012:schedule-group/default",
+                        ":scheduler:us-east-2:123456789012:schedule-group/default",
                       ],
                     ],
                   },
@@ -2209,18 +1770,6 @@ exports.handler = async function (event, context) {
               ],
               "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
               "Compress": true,
-              "LambdaFunctionAssociations": [
-                {
-                  "EventType": "origin-request",
-                  "IncludeBody": true,
-                  "LambdaFunctionARN": {
-                    "Fn::GetAtt": [
-                      "LookupVersionArnc8730278af02f875114ca902814c77b68f19b0087110E04D0A",
-                      "Parameter.Value",
-                    ],
-                  },
-                },
-              ],
               "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
               "PathPattern": "/_next/static/*",
               "TargetOriginId": "ServerlessWebappStarterKitStackWebappOrigin1D7B867FF",
@@ -2240,18 +1789,6 @@ exports.handler = async function (event, context) {
             ],
             "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
             "Compress": true,
-            "LambdaFunctionAssociations": [
-              {
-                "EventType": "origin-request",
-                "IncludeBody": true,
-                "LambdaFunctionARN": {
-                  "Fn::GetAtt": [
-                    "LookupVersionArnc8730278af02f875114ca902814c77b68f19b0087110E04D0A",
-                    "Parameter.Value",
-                  ],
-                },
-              },
-            ],
             "OriginRequestPolicyId": "b689b0a8-53d0-40ab-baf2-68738e2966ac",
             "TargetOriginId": "ServerlessWebappStarterKitStackWebappOrigin1D7B867FF",
             "ViewerProtocolPolicy": "allow-all",
@@ -2295,20 +1832,26 @@ exports.handler = async function (event, context) {
                 ],
               },
               "Id": "ServerlessWebappStarterKitStackWebappOrigin1D7B867FF",
-              "OriginAccessControlId": {
-                "Fn::GetAtt": [
-                  "WebappOrigin1FunctionUrlOriginAccessControlEA98B600",
-                  "Id",
-                ],
-              },
+              "OriginCustomHeaders": [
+                {
+                  "HeaderName": "x-origin-verify",
+                  "HeaderValue": {
+                    "Fn::Select": [
+                      2,
+                      {
+                        "Fn::Split": [
+                          "/",
+                          {
+                            "Ref": "AWS::StackId",
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
             },
           ],
-          "WebACLId": {
-            "Fn::GetAtt": [
-              "ExportsReader8B249524",
-              "/cdk/exports/ServerlessWebappStarterKitStack/ServerlessWebappStarterKitUsEast1Stackuseast1FnGetAttWebAclArn95310D3C",
-            ],
-          },
         },
       },
       "Type": "AWS::CloudFront::Distribution",
@@ -2338,7 +1881,7 @@ exports.handler = async function (event, context) {
                   "Dns.Http",
                 ],
               },
-              " --build-arg NEXT_PUBLIC_AWS_REGION=us-west-2 --file apps/webapp/Dockerfile --platform linux/arm64 --output type=docker,name=artifact:$imageTag --provenance=false .",
+              " --build-arg NEXT_PUBLIC_AWS_REGION=us-east-2 --file apps/webapp/Dockerfile --platform linux/arm64 --output type=docker,name=artifact:$imageTag --provenance=false .",
             ],
           ],
         },
@@ -2393,7 +1936,7 @@ exports.handler = async function (event, context) {
             ],
           ],
         },
-        "sourceS3Url": "s3://cdk-hnb659fds-assets-123456789012-us-west-2/REDACTED",
+        "sourceS3Url": "s3://cdk-hnb659fds-assets-123456789012-us-east-2/REDACTED",
         "tagPrefix": "REDACTED",
         "type": "ContainerImageBuild",
       },
@@ -2604,7 +2147,7 @@ exports.handler = async function (event, context) {
                       "generated",
                     ],
                   },
-                  ".auth.us-west-2.amazoncognito.com",
+                  ".auth.us-east-2.amazoncognito.com",
                 ],
               ],
             },
@@ -2612,6 +2155,19 @@ exports.handler = async function (event, context) {
               "Fn::GetAtt": [
                 "DatabaseClusterC6094C50",
                 "Endpoint",
+              ],
+            },
+            "ORIGIN_VERIFY_SECRET": {
+              "Fn::Select": [
+                2,
+                {
+                  "Fn::Split": [
+                    "/",
+                    {
+                      "Ref": "AWS::StackId",
+                    },
+                  ],
+                },
               ],
             },
             "USER_POOL_CLIENT_ID": {
@@ -2652,7 +2208,7 @@ exports.handler = async function (event, context) {
     },
     "WebappHandlerFunctionUrl7AEF8DEE": {
       "Properties": {
-        "AuthType": "AWS_IAM",
+        "AuthType": "NONE",
         "InvokeMode": "RESPONSE_STREAM",
         "TargetFunctionArn": {
           "Fn::GetAtt": [
@@ -2717,7 +2273,7 @@ exports.handler = async function (event, context) {
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":dsql:us-west-2:123456789012:cluster/",
+                    ":dsql:us-east-2:123456789012:cluster/",
                     {
                       "Fn::GetAtt": [
                         "DatabaseClusterC6094C50",
@@ -2770,7 +2326,7 @@ exports.handler = async function (event, context) {
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":ssm:us-west-2:123456789012:parameter/",
+                    ":ssm:us-east-2:123456789012:parameter/",
                     {
                       "Ref": "WebappOriginSourceParameterD87E143B",
                     },
@@ -2790,7 +2346,7 @@ exports.handler = async function (event, context) {
       },
       "Type": "AWS::IAM::Policy",
     },
-    "WebappInvokeFunctionPermission8F3F2610": {
+    "WebappHandlerinvokefunction483AB280": {
       "Properties": {
         "Action": "lambda:InvokeFunction",
         "FunctionName": {
@@ -2799,69 +2355,22 @@ exports.handler = async function (event, context) {
             "Arn",
           ],
         },
-        "Principal": "cloudfront.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
-            "",
-            [
-              "arn:",
-              {
-                "Ref": "AWS::Partition",
-              },
-              ":cloudfront::",
-              {
-                "Ref": "AWS::AccountId",
-              },
-              ":distribution/",
-              {
-                "Ref": "Webapp107041BD",
-              },
-            ],
-          ],
-        },
+        "InvokedViaFunctionUrl": true,
+        "Principal": "*",
       },
       "Type": "AWS::Lambda::Permission",
     },
-    "WebappOrigin1FunctionUrlOriginAccessControlEA98B600": {
-      "Properties": {
-        "OriginAccessControlConfig": {
-          "Name": "ServerlessWebappStarterKitStnctionUrlOriginAccessControl17EB4E66",
-          "OriginAccessControlOriginType": "lambda",
-          "SigningBehavior": "always",
-          "SigningProtocol": "sigv4",
-        },
-      },
-      "Type": "AWS::CloudFront::OriginAccessControl",
-    },
-    "WebappOrigin1InvokeFromApiForServerlessWebappStarterKitStackWebappOrigin1D7B867FF58DBB477": {
+    "WebappHandlerinvokefunctionurlBCE1469C": {
       "Properties": {
         "Action": "lambda:InvokeFunctionUrl",
         "FunctionName": {
           "Fn::GetAtt": [
-            "WebappHandlerFunctionUrl7AEF8DEE",
-            "FunctionArn",
+            "WebappHandler8DD158A3",
+            "Arn",
           ],
         },
-        "Principal": "cloudfront.amazonaws.com",
-        "SourceArn": {
-          "Fn::Join": [
-            "",
-            [
-              "arn:",
-              {
-                "Ref": "AWS::Partition",
-              },
-              ":cloudfront::",
-              {
-                "Ref": "AWS::AccountId",
-              },
-              ":distribution/",
-              {
-                "Ref": "Webapp107041BD",
-              },
-            ],
-          ],
-        },
+        "FunctionUrlAuthType": "NONE",
+        "Principal": "*",
       },
       "Type": "AWS::Lambda::Permission",
     },
@@ -2950,7 +2459,7 @@ exports.handler = async function (event, context) {
                     {
                       "Ref": "AWS::Partition",
                     },
-                    ":ssm:us-west-2:123456789012:parameter/",
+                    ":ssm:us-east-2:123456789012:parameter/",
                     {
                       "Ref": "WebappOriginSourceParameterD87E143B",
                     },

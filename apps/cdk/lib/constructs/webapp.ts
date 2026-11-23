@@ -8,7 +8,6 @@ import { GeoRestriction } from 'aws-cdk-lib/aws-cloudfront';
 import { IHostedZone } from 'aws-cdk-lib/aws-route53';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Database } from './database';
-import { EdgeFunction } from './cf-lambda-furl-service/edge-function';
 import { ICertificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { Auth } from './auth/';
 import { ContainerImageBuild } from '@cdklabs/deploy-time-build';
@@ -20,7 +19,6 @@ import { AwsCustomResource, AwsCustomResourcePolicy, PhysicalResourceId } from '
 
 export interface WebappProps {
   database: Database;
-  signPayloadHandler: EdgeFunction;
   accessLogBucket: Bucket;
   auth: Auth;
   eventBus: EventBus;
@@ -44,14 +42,6 @@ export interface WebappProps {
    * @default Use root domain
    */
   subDomain?: string;
-
-  /**
-   * ARN of a WAF Web ACL (scope=CLOUDFRONT, us-east-1) to associate with the CloudFront
-   * distribution. Required to enroll in a CloudFront flat-rate pricing plan.
-   *
-   * @default No Web ACL is associated (pay-as-you-go).
-   */
-  webAclId?: string;
 
   /**
    * Geographic restriction for the CloudFront distribution.
@@ -111,8 +101,6 @@ export class Webapp extends Construct {
       hostedZone,
       certificate: props.certificate,
       accessLogBucket: props.accessLogBucket,
-      signPayloadHandler: props.signPayloadHandler,
-      webAclId: props.webAclId,
       geoRestriction: props.geoRestriction,
     });
     this.baseUrl = service.url;
