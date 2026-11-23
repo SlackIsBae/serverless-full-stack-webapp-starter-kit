@@ -47,20 +47,36 @@ See [`AGENTS.md`](AGENTS.md) for coding rules (auth, database, async jobs) and [
 
 ## Changes and deploys
 
-1. Open a pull request against `main`. The PR title must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, ...).
-2. CI (`Build-and-Test`, PR title `lint`) must pass, and a teammate must approve.
-3. After merging, a teammate deploys from their laptop. Deploys are manual on purpose: CI has no AWS credentials.
+Merging to `main` deploys to production automatically.
+
+1. Open a pull request against `main` (or ask Kiro in Slack to open one). The PR title must follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, ...).
+2. CI (`Build-and-Test`, PR title `lint`) must pass. App-code changes can then be merged right away. Changes to infrastructure, CI, dependencies, Dockerfiles, migrations, or agent instructions also need approval from a code owner (`.github/CODEOWNERS`).
+3. After the merge, the `Deploy` workflow runs `cdk deploy` (about 5 minutes). Watch it under **Actions > Deploy**. If the deploy fails, CloudFormation rolls back and production keeps running the previous version.
+
+The workflow authenticates to AWS with GitHub OIDC. The IAM role it assumes (`infra/github-deploy-role.yaml`) trusts only jobs in this repo's `production` environment, which only `main` can use, and can only assume the CDK deploy roles. The role template is deployed by hand, so the workflow cannot change its own permissions.
+
+### Reset to the demo baseline
+
+The `demo-baseline` tag marks a known-good version. To put production back to it, for example after a demo session:
+
+```sh
+scripts/demo-reset.sh
+```
+
+The script opens and merges a PR that restores `main` to the tag, and the merge redeploys it. If `main` already matches the tag, it just redeploys to undo any manual changes made in AWS. It needs `gh` signed in as a repo admin.
+
+### Deploying by hand
+
+Needed only if the workflow is unavailable. Use AWS credentials for the Taskboard account with us-east-2 as the region:
 
 ```sh
 git checkout main && git pull
 cd apps/cdk
-pnpm exec cdk diff        # review what will change
+pnpm exec cdk diff
 pnpm exec cdk deploy --all
 ```
 
-Deploys need AWS credentials for the Taskboard account with us-east-2 as the region. A deploy takes about 5 minutes (15 for the first one). It builds both container images in CodeBuild, so Docker is not needed locally, and it runs database migrations automatically.
-
-`main` must always match what is deployed. Don't merge a PR unless someone will deploy it right away.
+The first deploy takes about 15 minutes. Container images are built in CodeBuild, so Docker is not needed locally, and database migrations run automatically.
 
 ## Operations
 
