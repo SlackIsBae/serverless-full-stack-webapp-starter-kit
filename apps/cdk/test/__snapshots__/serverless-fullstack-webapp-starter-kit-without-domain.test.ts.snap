@@ -600,7 +600,6 @@ exports[`Snapshot test 1`] = `
         },
         "MemorySize": 256,
         "PackageType": "Image",
-        "ReservedConcurrentExecutions": 1,
         "Role": {
           "Fn::GetAtt": [
             "AsyncJobHandlerServiceRoleFE9F530F",
