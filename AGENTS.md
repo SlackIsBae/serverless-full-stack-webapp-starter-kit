@@ -22,7 +22,7 @@ Taskboard is the team's internal task tracker, running in production in AWS us-e
 
 - **Single region.** Everything deploys to us-east-2 in one stack. The AWS account blocks every other region, so do not add a us-east-1 stack, Lambda@Edge, a CLOUDFRONT-scope WAF Web ACL, ACM certificates for CloudFront, or a custom domain.
 - **Origin protection.** The webapp's Lambda Function URL is public (`authType: NONE`). CloudFront sends a secret `x-origin-verify` header (`apps/cdk/lib/constructs/cf-lambda-furl-service/service.ts`) and `apps/webapp/src/proxy.ts` returns 403 without it. Keep both sides and the `ORIGIN_VERIFY_HEADER` constants in sync, and keep the proxy matcher covering API routes.
-- **No reserved concurrency.** The account's Lambda concurrency limit is 10, and Lambda requires 10 to stay unreserved, so any `reservedConcurrentExecutions` fails the deploy.
+- **Concurrency caps.** The async-job Lambda reserves 1 concurrent execution as a cost guard. Do not remove or raise it without a reason in the PR body. The account limit is 1000, and Lambda requires 100 to stay unreserved.
 - **Stable names.** Do not rename the stack (`ServerlessWebappStarterKitStack`) or construct IDs in `apps/cdk/lib`. Renames replace resources, and the DSQL cluster and Cognito user pool are retained on delete, which orphans production data.
 - **Auth stays closed.** Keep Cognito self sign-up disabled; admins create accounts.
 - **Public repo.** Never commit secrets, passwords, AWS account IDs, user pool IDs, or deployed URLs.

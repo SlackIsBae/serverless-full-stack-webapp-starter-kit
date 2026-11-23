@@ -63,7 +63,7 @@ The `demo-baseline` tag marks a known-good version. To put production back to it
 scripts/demo-reset.sh
 ```
 
-The script opens and merges a PR that restores `main` to the tag, and the merge redeploys it. If `main` already matches the tag, it just redeploys to undo any manual changes made in AWS. It needs `gh` signed in as a repo admin.
+The script opens and merges a PR that restores `main` to the tag, and the merge redeploys it. If `main` already matches the tag, it just reruns the deploy. A redeploy does **not** undo changes made directly in AWS (for example, an edited Lambda setting): CloudFormation only applies differences between templates. Revert those directly, or check for drift with **CloudFormation > Stack actions > Detect drift**. It needs `gh` signed in as a repo admin.
 
 ### Deploying by hand
 
@@ -82,7 +82,7 @@ The first deploy takes about 15 minutes. Container images are built in CodeBuild
 
 - **Monitoring:** AWS DevOps Agent watches the stack and reads this repo to connect incidents to code changes.
 - **Logs:** CloudWatch Logs for the webapp and async-job Lambdas (one-week retention); CloudFront access logs in the stack's S3 bucket.
-- **Limits:** the account's Lambda concurrency limit is low, so no function reserves concurrency. Don't add `reservedConcurrentExecutions` until the limit is raised.
+- **Limits:** the async-job Lambda reserves 1 concurrent execution, so translate jobs run one at a time (extra requests queue and retry). The account's Lambda concurrency limit is 1000.
 - **Cost:** a few dollars a month at team usage. The account has a monthly budget with spend limits.
 
 ### Add a teammate

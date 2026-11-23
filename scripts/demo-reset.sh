@@ -3,8 +3,8 @@
 #
 # - If main differs from the baseline: opens a PR that restores the baseline tree on main,
 #   merges it as an admin once CI passes, and the Deploy workflow redeploys automatically.
-# - If main already matches the baseline: re-runs the Deploy workflow, which undoes any
-#   out-of-band changes (for example a live mitigation applied directly to AWS).
+# - If main already matches the baseline: re-runs the Deploy workflow. This does NOT undo
+#   changes made directly in AWS; CloudFormation only applies template differences.
 #
 # Requires: gh signed in as a repo admin. Does not touch your working tree (uses a temp worktree).
 # Usage: scripts/demo-reset.sh [--yes]
@@ -17,7 +17,7 @@ cd "$(git rev-parse --show-toplevel)"
 git fetch -q origin main "refs/tags/${TAG}:refs/tags/${TAG}" --force
 
 if git diff --quiet "${TAG}" origin/main; then
-  echo "main already matches ${TAG}. Redeploying main to undo any drift in AWS."
+  echo "main already matches ${TAG}. Redeploying main (does not undo changes made directly in AWS)."
   gh workflow run deploy.yml --repo "${REPO}" --ref main
   echo "Deploy started: https://github.com/${REPO}/actions/workflows/deploy.yml"
   exit 0
