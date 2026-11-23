@@ -1,5 +1,33 @@
 # AGENTS.md
 
+Taskboard is the team's internal task tracker, running in production in AWS us-east-2. See `README.md` for what it does and how it is built. Read this section before changing anything.
+
+## How changes reach production
+
+- Work on a branch and open a pull request against `main`. Never push to `main`; it is protected and requires passing CI plus a human approval.
+- Humans merge and then deploy from a laptop with `cd apps/cdk && pnpm exec cdk deploy --all`. CI has no AWS credentials, on purpose.
+- Agents never deploy, destroy, or change AWS resources directly: no `cdk deploy`, `cdk destroy`, `cdk bootstrap`, or mutating AWS CLI/SDK calls. Read-only investigation (CloudWatch logs and metrics, `cdk diff`, `cdk synth`) is fine.
+- `main` must always match what is deployed, so every PR should be safe to deploy as soon as it merges.
+
+## Pull request checklist
+
+- One concern per PR, with the smallest diff that solves it. Do not reformat or refactor unrelated code.
+- PR title follows Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, ...). CI enforces this.
+- Before opening the PR, run from the repo root: `pnpm -r run check:ci`, `pnpm -r run test:unit`, and `pnpm -r run build` (copy `apps/webapp/.env.local.example` to `apps/webapp/.env.local` first). The pre-commit hook runs lint and unit tests; do not bypass it with `--no-verify`.
+- If you change CDK code, update the snapshot with `cd apps/cdk && pnpm exec vitest run -u`, review the snapshot diff, and describe the infrastructure change in the PR body (which resources change or get replaced).
+- In the PR body, say what you verified and how.
+
+## Production constraints (do not break)
+
+- **Single region.** Everything deploys to us-east-2 in one stack. The AWS account blocks every other region, so do not add a us-east-1 stack, Lambda@Edge, a CLOUDFRONT-scope WAF Web ACL, ACM certificates for CloudFront, or a custom domain.
+- **Origin protection.** The webapp's Lambda Function URL is public (`authType: NONE`). CloudFront sends a secret `x-origin-verify` header (`apps/cdk/lib/constructs/cf-lambda-furl-service/service.ts`) and `apps/webapp/src/proxy.ts` returns 403 without it. Keep both sides and the `ORIGIN_VERIFY_HEADER` constants in sync, and keep the proxy matcher covering API routes.
+- **No reserved concurrency.** The account's Lambda concurrency limit is 10, and Lambda requires 10 to stay unreserved, so any `reservedConcurrentExecutions` fails the deploy.
+- **Stable names.** Do not rename the stack (`ServerlessWebappStarterKitStack`) or construct IDs in `apps/cdk/lib`. Renames replace resources, and the DSQL cluster and Cognito user pool are retained on delete, which orphans production data.
+- **Auth stays closed.** Keep Cognito self sign-up disabled; admins create accounts.
+- **Public repo.** Never commit secrets, passwords, AWS account IDs, user pool IDs, or deployed URLs.
+- **Dependencies.** Add dependencies only when needed. pnpm enforces `minimumReleaseAge` (3 days) in `pnpm-workspace.yaml`; pick a version old enough instead of excluding it.
+- **CI and lint config.** Do not edit `.github/workflows/` or relax rules in `oxlintrc.json` unless the task is about CI, and call it out in the PR body.
+
 ## Commands
 
 ```bash
@@ -14,10 +42,10 @@ cd apps/webapp && pnpm run lint
 # cdk
 cd apps/cdk && pnpm run build
 cd apps/cdk && pnpm run test:unit
-cd apps/cdk && pnpm exec cdk deploy --all
 cd apps/cdk && pnpm exec cdk diff
+cd apps/cdk && pnpm exec cdk deploy --all   # humans only, after merge
 
-# db migration (requires DSQL cluster)
+# db migration (requires DSQL cluster; never run against production, deploys apply migrations)
 pnpm --filter @repo/db run migrate
 
 # lint / test across all workspaces (from root)
@@ -25,7 +53,7 @@ pnpm -r run lint
 pnpm -r run test:unit
 
 # local development (requires DSQL cluster)
-pnpm --filter @repo/db run cluster create   # create dev DSQL cluster
+pnpm --filter @repo/db run cluster create   # create dev DSQL cluster (humans only, creates AWS resources)
 cd apps/webapp && pnpm run dev
 ```
 
@@ -82,8 +110,6 @@ See `packages/db/README.md` for full usage. Key rules:
 
 The webapp runs on Lambda behind CloudFront via Lambda Web Adapter (response streaming). `next.config.ts` uses `output: 'standalone'`. Build-time env vars (prefixed `NEXT_PUBLIC_`) are injected via CDK `ContainerImageBuild` build args — they cannot be changed at runtime.
 
-Lambda@Edge function versions (`edge-function.ts`) are retained (`RemovalPolicy.RETAIN`) instead of deleted by CDK, since CloudFront replica deletion is asynchronous and premature deletion causes `DELETE_FAILED`. Retained versions accumulate over deploys and must be deleted manually (via the Lambda console/CLI, after confirming they are no longer replicated to any edge location) if cleanup is needed.
-
 ### Container and bundle assets
 
 Both container images are built from the repo root (`directory: join('..', '..')`) with `ignoreMode: IgnoreMode.DOCKER`, so the root `.dockerignore` governs what is staged. Without `IgnoreMode.DOCKER`, CDK applies its own ignore semantics and recursively copies `cdk.out` into the asset staging directory, which fails with `ENAMETOOLONG`.
@@ -106,26 +132,18 @@ Server → client push uses AppSync Events. Server-side: `sendEvent(channelName,
 ## Conventions
 
 - PR titles and code comments in English.
-- Issues and discussions in English or Japanese.
 - PR titles follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.).
 - UI components: use [shadcn/ui](https://ui.shadcn.com/). Do not introduce alternative component libraries.
 - Logs: use JSON structured output.
 - Dependencies: esbuild and Next.js bundle everything, so only packages with native binaries needed at Lambda runtime belong in `dependencies`. Everything else goes in `devDependencies`.
-- Tests: colocate with source (`foo.test.ts` next to `foo.ts`). Use `.integ.test.ts` suffix for tests requiring external resources. Test runner is vitest for `apps/webapp` and `packages/db`; `apps/cdk` uses Jest (`test:unit`) for CDK snapshot/template tests kept under `apps/cdk/test/`.
-
-## Contributing to the kit itself
-
-This section applies **only if the git remote of this repository is `aws-samples/serverless-full-stack-webapp-starter-kit`**. If the remote is anything else, this project is a copy: ignore this section (and delete it, along with the `.starter-kit/` directory). From a copied app, never open issues or PRs against the upstream kit repository unless the user explicitly asks to send feedback upstream.
-
-- Read [`.starter-kit/DESIGN_PRINCIPLES.md`](.starter-kit/DESIGN_PRINCIPLES.md) before making changes, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution workflow.
-- Use [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) as the PR body structure — `gh pr create` does not apply it automatically.
+- Tests: colocate with source (`foo.test.ts` next to `foo.ts`). Use `.integ.test.ts` suffix for tests requiring external resources. Test runner is vitest for `apps/webapp` and `packages/db`; `apps/cdk` also uses vitest, with CDK snapshot/template tests kept under `apps/cdk/test/`.
 
 ## Do not
 
 - Do not bypass `authActionClient` for any mutation. No raw Drizzle calls from Server Actions.
 - Do not add an authenticated API Route without going through `withAuth()`.
 - Do not add `middleware.ts`. It is deprecated in Next.js 16; route protection lives in `proxy.ts` (the renamed file convention), which runs in the Node.js Lambda runtime.
-- Do not hardcode AWS region or account IDs in application code. Use CDK context or environment variables. Exception: CloudFront-adjacent resources (WAF Web ACL with `CLOUDFRONT` scope, Lambda@Edge) must be created in `us-east-1` — the dedicated `UsEast1Stack` and `EdgeFunction` construct hardcode this by design.
+- Do not hardcode AWS region or account IDs in application code. Use CDK context or environment variables.
 - Do not add `NEXT_PUBLIC_` env vars to `.env.local` for deployed builds — they must be set as CDK build args in `webapp.ts`.
 - Do not use `.references()` in Drizzle schema — DSQL does not support foreign keys. Use `relations()` instead.
 - Do not use `serial`, `smallserial`, or `bigserial` column types — DSQL has no sequences. Use `uuid`/`text`. (`json`/`jsonb` are supported.)
