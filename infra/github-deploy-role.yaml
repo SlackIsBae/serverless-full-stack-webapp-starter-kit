@@ -4,9 +4,11 @@ Description: >-
   never by the workflow itself, so a merged change cannot widen its own permissions.
 
 Parameters:
-  GitHubRepo:
+  GitHubSubjectPrefix:
     Type: String
-    Default: SlackIsBae/taskboard-app
+    # This repo uses GitHub's immutable OIDC subject (owner and repo IDs, so it survives renames).
+    # Check with: gh api repos/SlackIsBae/taskboard-app/actions/oidc/customization/sub
+    Default: repo:SlackIsBae@235365121/taskboard-app@1465720288
   GitHubEnvironment:
     Type: String
     Default: production
@@ -35,7 +37,7 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
                 # Only jobs that run in the protected `production` environment (main branch only).
-                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepo}:environment:${GitHubEnvironment}
+                token.actions.githubusercontent.com:sub: !Sub ${GitHubSubjectPrefix}:environment:${GitHubEnvironment}
       Policies:
         - PolicyName: AssumeCdkBootstrapRoles
           PolicyDocument:
