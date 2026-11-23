@@ -24,7 +24,7 @@ test('E03: repeat sign-in for User A is idempotent', async ({ browser }) => {
     await page.locator(cognito.passwordInput).fill(user.password);
     await page.locator(cognito.submitButton).click();
 
-    await expect(page.getByRole('link', { name: 'Todo App' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Taskboard' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Sign Out' })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Pending Tasks \(\d+\)/ })).toBeVisible();
   } finally {

@@ -5,7 +5,6 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { MainStack } from '../lib/main-stack';
-import { UsEast1Stack } from '../lib/us-east-1-stack';
 
 const repoRoot = path.join(__dirname, '..', '..', '..');
 const migrationsDir = path.join(repoRoot, 'packages', 'db', 'migrations');
@@ -18,15 +17,8 @@ function synthMain(): Template {
   fs.rmSync(outdir, { recursive: true, force: true });
 
   const app = new cdk.App({ outdir });
-  const virginia = new UsEast1Stack(app, 'VirginiaStack', {
-    env: { account: '123456789012', region: 'us-east-1' },
-    crossRegionReferences: true,
-  });
   const main = new MainStack(app, 'RegressionStack', {
-    env: { account: '123456789012', region: 'us-west-2' },
-    crossRegionReferences: true,
-    signPayloadHandler: virginia.signPayloadHandler,
-    webAclId: virginia.webAclArn,
+    env: { account: '123456789012', region: 'us-east-2' },
   });
   app.synth();
   return Template.fromStack(main);

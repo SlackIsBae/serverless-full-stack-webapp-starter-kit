@@ -7,6 +7,9 @@ A serverless full-stack web app template you **copy and grow into your own app**
 
 Copy, deploy with a single command, then replace the sample todo app with your own features.
 
+> [!NOTE]
+> **Single-region fork (us-east-2).** This copy deploys everything to one region because the target account only allows one region. Compared with the upstream kit, it drops the us-east-1 stack: there is no Lambda@Edge payload signer, no WAF Web ACL (so no CloudFront flat-rate plan; CloudFront is pay-as-you-go), and no custom domain. CloudFront reaches the Lambda Function URL with a secret `x-origin-verify` header that [`apps/webapp/src/proxy.ts`](apps/webapp/src/proxy.ts) verifies, so requests that bypass CloudFront get a 403. Deploy with `pnpm exec cdk deploy --all` (stack `ServerlessWebappStarterKitStack`) and skip step 4 below.
+
 ## What you get
 
 1. **Working sample app** — A todo app with authentication, DB CRUD, async jobs, and real-time notifications wired end-to-end. Designed as a readable reference for AI coding agents and humans alike.

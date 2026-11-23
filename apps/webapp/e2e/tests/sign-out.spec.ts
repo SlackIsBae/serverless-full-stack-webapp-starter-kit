@@ -7,7 +7,7 @@ test('E09: sign-out invalidates access for the current and a new browser context
   await page.goto('/');
   await page.getByRole('link', { name: 'Sign Out' }).click();
   await expect(page).toHaveURL(/\/sign-in$/);
-  await expect(page.getByRole('heading', { name: 'Todo App' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Taskboard' })).toBeVisible();
 
   await page.goto('/');
   await expect(page).toHaveURL(/\/sign-in$/);

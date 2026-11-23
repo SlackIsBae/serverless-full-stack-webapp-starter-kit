@@ -40,8 +40,10 @@ export class AsyncJob extends Construct {
         DSQL_ENDPOINT: database.endpoint,
         EVENT_HTTP_ENDPOINT: eventBus.httpEndpoint,
       },
-      // limit concurrency to mitigate any possible EDoS attacks
-      reservedConcurrentExecutions: 1,
+      // Upstream reserves 1 concurrent execution here to mitigate EDoS. Removed in this fork:
+      // new accounts start with an account concurrency limit of 10, and Lambda requires at least
+      // 10 to stay unreserved, so any reservation fails the deploy. Restore it once the account
+      // limit is raised (Service Quotas: Lambda "Concurrent executions", L-B99A9384).
       logGroup: new LogGroup(this, 'HandlerLogs', {
         retention: RetentionDays.ONE_WEEK,
         removalPolicy: RemovalPolicy.DESTROY,

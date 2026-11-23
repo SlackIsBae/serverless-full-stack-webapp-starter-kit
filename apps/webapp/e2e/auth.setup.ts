@@ -33,7 +33,7 @@ async function authenticate(page: Page, user: User) {
   await page.locator(cognito.passwordInput).fill(user.password);
   await page.locator(cognito.submitButton).click();
 
-  await expect(page.getByRole('link', { name: 'Todo App' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Taskboard' })).toBeVisible();
   await expect(page.getByRole('heading', { name: /Pending Tasks \(\d+\)/ })).toBeVisible();
 }
 

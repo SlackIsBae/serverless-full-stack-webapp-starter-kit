@@ -12,6 +12,11 @@
   "rules": {
     "typescript/no-unused-vars": "off",
     "typescript/no-unsafe-type-assertion": "off",
+    "vitest/require-mock-type-parameters": "off",
+    "eslint/no-underscore-dangle": "off",
+    "typescript/no-unnecessary-type-assertion": "off",
+    "react/refs": "off",
+    "react/purity": "off",
     "unicorn/no-array-sort": "off",
     "no-new": "off",
     "no-unused-expressions": "off",

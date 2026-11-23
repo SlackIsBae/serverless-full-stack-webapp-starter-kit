@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import * as cdk from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import { MainStack } from '../lib/main-stack';
-import { UsEast1Stack } from '../lib/us-east-1-stack';
+import { ORIGIN_VERIFY_HEADER } from '../lib/constructs/cf-lambda-furl-service/service';
 
 // Managed CachePolicy.CACHING_DISABLED id (min/max/default TTL = 0). Flat-rate Free/Pro plans
 // forbid custom cache policies, so the default behavior must reference this managed policy.
@@ -19,24 +19,14 @@ function getDistributionConfig(template: Template) {
   return Object.values(distributions)[0].Properties.DistributionConfig as Record<string, unknown>;
 }
 
-// Mirrors bin/cdk.ts: the us-east-1 stack always provisions the CLOUDFRONT Web ACL, and its ARN
-// is passed to the main stack so the distribution is enrolled in the flat-rate pricing plan.
+// Mirrors bin/cdk.ts: single-region deployment, no us-east-1 stack.
 function synth() {
   const app = new cdk.App();
-  const virginia = new UsEast1Stack(app, 'UsEast1Stack', {
-    env: { account, region: 'us-east-1' },
-    crossRegionReferences: true,
-  });
-  const mainStack = new MainStack(app, 'MainStack', {
-    env: { account, region: 'us-west-2' },
-    crossRegionReferences: true,
-    signPayloadHandler: virginia.signPayloadHandler,
-    webAclId: virginia.webAclArn,
-  });
-  return { virginia: Template.fromStack(virginia), main: Template.fromStack(mainStack) };
+  const mainStack = new MainStack(app, 'MainStack', { env: { account, region: 'us-east-2' } });
+  return { main: Template.fromStack(mainStack) };
 }
 
-describe('CloudFront flat-rate plan compatibility (issue #187)', () => {
+describe('CloudFront cache policies (managed policies only)', () => {
   test('default behavior uses the managed CACHING_DISABLED policy, not a custom CachePolicy resource', () => {
     const { main } = synth();
     // No custom cache policy resource exists (custom policies block Free/Pro enrollment).
@@ -59,30 +49,40 @@ describe('CloudFront flat-rate plan compatibility (issue #187)', () => {
     // default behavior (1) + additional behaviors.
     expect(1 + additional).toBeLessThanOrEqual(5);
   });
-
-  test('the distribution is associated with the Web ACL', () => {
-    const { main } = synth();
-    expect(getDistributionConfig(main).WebACLId).toBeDefined();
-  });
 });
 
-describe('us-east-1 WAF Web ACL for the flat-rate plan (issue #187)', () => {
-  test('is a Free-plan-compliant CLOUDFRONT-scoped Web ACL without false-positive-prone rules', () => {
-    const { virginia } = synth();
+describe('origin protection without Lambda@Edge (single-region fork)', () => {
+  test('no Lambda@Edge functions or OAC are attached to the distribution', () => {
+    const { main } = synth();
+    const config = getDistributionConfig(main);
+    const behaviors = [config.DefaultCacheBehavior, ...((config.CacheBehaviors as unknown[]) ?? [])] as Array<
+      Record<string, unknown>
+    >;
+    for (const behavior of behaviors) {
+      expect(behavior.LambdaFunctionAssociations).toBeUndefined();
+    }
+    main.resourceCountIs('AWS::CloudFront::OriginAccessControl', 0);
+  });
 
-    virginia.resourceCountIs('AWS::WAFv2::WebACL', 1);
-    virginia.hasResourceProperties('AWS::WAFv2::WebACL', { Scope: 'CLOUDFRONT' });
+  test('the Function URL is public and CloudFront sends the secret origin header', () => {
+    const { main } = synth();
+    main.hasResourceProperties('AWS::Lambda::Url', { AuthType: 'NONE', InvokeMode: 'RESPONSE_STREAM' });
 
-    const webAcls = virginia.findResources('AWS::WAFv2::WebACL');
-    const rules = Object.values(webAcls)[0].Properties.Rules as Array<Record<string, unknown>>;
-    // Free plan allows at most 5 rules.
-    expect(rules.length).toBeLessThanOrEqual(5);
+    const origins = getDistributionConfig(main).Origins as Array<Record<string, unknown>>;
+    const headers = origins.flatMap((o) => (o.OriginCustomHeaders as Array<Record<string, unknown>>) ?? []);
+    expect(headers.map((h) => h.HeaderName)).toContain(ORIGIN_VERIFY_HEADER);
+  });
 
-    const serialized = JSON.stringify(rules);
-    // No rules that cause hard-to-diagnose false positives:
-    expect(serialized).not.toContain('rateBasedStatement'); // rate limiting
-    expect(serialized).not.toContain('AmazonIpReputationList'); // IP-reputation blocking
-    expect(serialized).not.toContain('AnonymousIpList'); // blocks Free-plan subscription
-    expect(serialized).not.toContain('CommonRuleSet'); // cookie-size / no-user-agent false positives
+  test('the webapp Lambda receives the same secret to verify', () => {
+    const { main } = synth();
+    const fns = Object.values(main.findResources('AWS::Lambda::Function'));
+    const webapp = fns.find((f) => f.Properties?.Environment?.Variables?.ORIGIN_VERIFY_SECRET);
+    expect(webapp).toBeDefined();
+
+    const origins = getDistributionConfig(main).Origins as Array<Record<string, unknown>>;
+    const header = origins
+      .flatMap((o) => (o.OriginCustomHeaders as Array<Record<string, unknown>>) ?? [])
+      .find((h) => h.HeaderName === ORIGIN_VERIFY_HEADER);
+    expect(header?.HeaderValue).toEqual(webapp!.Properties.Environment.Variables.ORIGIN_VERIFY_SECRET);
   });
 });
