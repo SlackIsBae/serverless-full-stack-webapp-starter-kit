@@ -38,7 +38,7 @@ new MainStack(app, 'ServerlessWebappStarterKitStack', {
   geoRestriction: props.geoRestriction,
 });
 
-cdk.Tags.of(app).add('Application', 'ServerlessFullStackWebappStarterKit');
+cdk.Tags.of(app).add('Application', 'Taskboard');
 
 // import { Aspects } from 'aws-cdk-lib';
 // import { AwsSolutionsChecks } from 'cdk-nag';
