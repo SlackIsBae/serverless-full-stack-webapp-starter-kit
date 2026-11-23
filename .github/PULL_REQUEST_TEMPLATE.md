@@ -17,4 +17,4 @@
 - [ ] `pnpm -r run check:ci`, `pnpm -r run test:unit`, and `pnpm -r run build` pass locally
 - [ ] Respects the production constraints in `AGENTS.md` (single region, origin header, no reserved concurrency, stable names)
 - [ ] No secrets, account IDs, or deployed URLs added
-- [ ] Safe to deploy as soon as it merges
+- [ ] Safe to deploy: merging deploys to production automatically
