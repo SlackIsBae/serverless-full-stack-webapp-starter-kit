@@ -13,8 +13,6 @@ export const todoItems = pgTable('TodoItem', {
   status: text('status').notNull().default('PENDING'),
   // Nullable with no default: DSQL cannot ADD COLUMN with NOT NULL/DEFAULT. NULL means no tags.
   tags: jsonb('tags').$type<string[]>(),
-  // Nullable with no default for the same DSQL reason. NULL means no owner.
-  owner: text('owner'),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true })
     .defaultNow()

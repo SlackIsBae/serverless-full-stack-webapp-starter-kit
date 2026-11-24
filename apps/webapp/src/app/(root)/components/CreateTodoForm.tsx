@@ -49,7 +49,6 @@ export default function CreateTodoForm(props: { userId: string; allTags: string[
         title: '',
         description: '',
         tags: [],
-        owner: '',
       },
     },
   });
@@ -101,18 +100,6 @@ export default function CreateTodoForm(props: { userId: string; allTags: string[
           {formState.errors.description && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formState.errors.description.message}</p>
           )}
-        </div>
-
-        <div>
-          <label htmlFor="owner" className="block text-sm font-medium text-foreground">
-            Owner
-          </label>
-          <input
-            id="owner"
-            {...register('owner')}
-            placeholder="Who owns this task? (optional)"
-            className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
         </div>
 
         <div>
