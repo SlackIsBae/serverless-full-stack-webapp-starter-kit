@@ -7,6 +7,9 @@ import { updateTodo, deleteTodo, updateTodoStatus, runTranslateJob } from '../ac
 import { updateTodoSchema, TodoItemStatus } from '../schemas';
 import { useAction } from 'next-safe-action/hooks';
 import { toast } from 'sonner';
+import { Controller } from 'react-hook-form';
+import TagInput from '@/components/TagInput';
+import TagChip from '@/components/TagChip';
 import type { todoItems } from '@repo/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
@@ -14,9 +17,10 @@ type TodoItem = InferSelectModel<typeof todoItems>;
 
 interface TodoItemProps {
   todo: TodoItem;
+  allTags: string[];
 }
 
-export default function TodoItemComponent({ todo }: TodoItemProps) {
+export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const { execute, status: translateStatus } = useAction(runTranslateJob, {
     onSuccess: () => {
@@ -29,7 +33,7 @@ export default function TodoItemComponent({ todo }: TodoItemProps) {
 
   // Update Todo Form Action with React Hook Form
   const {
-    form: { register: registerUpdate, formState: updateFormState },
+    form: { register: registerUpdate, formState: updateFormState, control },
     action: updateAction,
     handleSubmitWithAction: handleUpdate,
   } = useHookFormAction(updateTodo, zodResolver(updateTodoSchema), {
@@ -48,6 +52,7 @@ export default function TodoItemComponent({ todo }: TodoItemProps) {
         title: todo.title,
         description: todo.description,
         status: todo.status as TodoItemStatus,
+        tags: todo.tags ?? [],
       },
     },
   });
@@ -124,6 +129,19 @@ export default function TodoItemComponent({ todo }: TodoItemProps) {
             )}
           </div>
 
+          <div>
+            <label htmlFor={`tags-${todo.id}`} className="block text-sm font-medium text-gray-700">
+              Tags
+            </label>
+            <Controller
+              control={control}
+              name="tags"
+              render={({ field }) => (
+                <TagInput id={`tags-${todo.id}`} value={field.value} onChange={field.onChange} suggestions={allTags} />
+              )}
+            />
+          </div>
+
           <div className="flex justify-end space-x-2">
             <button
               type="button"
@@ -172,6 +190,13 @@ export default function TodoItemComponent({ todo }: TodoItemProps) {
             >
               {todo.description}
             </p>
+            {(todo.tags ?? []).length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {(todo.tags ?? []).map((tag) => (
+                  <TagChip key={tag} tag={tag} />
+                ))}
+              </div>
+            )}
             <p className="text-xs text-gray-400 mt-1">Created: {new Date(todo.createdAt).toLocaleDateString()}</p>
           </div>
         </div>

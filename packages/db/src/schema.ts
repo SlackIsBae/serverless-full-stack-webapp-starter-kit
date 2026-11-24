@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, jsonb, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('User', {
@@ -11,6 +11,8 @@ export const todoItems = pgTable('TodoItem', {
   description: text('description').notNull(),
   userId: text('userId').notNull(),
   status: text('status').notNull().default('PENDING'),
+  // Nullable with no default: DSQL cannot ADD COLUMN with NOT NULL/DEFAULT. NULL means no tags.
+  tags: jsonb('tags').$type<string[]>(),
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updatedAt', { withTimezone: true })
     .defaultNow()

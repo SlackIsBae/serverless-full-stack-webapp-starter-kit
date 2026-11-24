@@ -13,24 +13,28 @@ import { todoItems } from '@repo/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { runJob } from '@/lib/jobs';
+import { normalizeTags } from '@/lib/tags';
 
 export const createTodo = authActionClient.inputSchema(createTodoSchema).action(async ({ parsedInput, ctx }) => {
-  const { title, description } = parsedInput;
+  const { title, description, tags } = parsedInput;
   const { userId } = ctx;
 
-  const [todo] = await db.insert(todoItems).values({ title, description, userId, status: 'PENDING' }).returning();
+  const [todo] = await db
+    .insert(todoItems)
+    .values({ title, description, userId, status: 'PENDING', tags: normalizeTags(tags) })
+    .returning();
 
   revalidatePath('/');
   return { todo };
 });
 
 export const updateTodo = authActionClient.inputSchema(updateTodoSchema).action(async ({ parsedInput, ctx }) => {
-  const { id, title, description, status } = parsedInput;
+  const { id, title, description, status, tags } = parsedInput;
   const { userId } = ctx;
 
   const [todo] = await db
     .update(todoItems)
-    .set({ title, description, status, updatedAt: new Date() })
+    .set({ title, description, status, tags: normalizeTags(tags), updatedAt: new Date() })
     .where(and(eq(todoItems.id, id), eq(todoItems.userId, userId)))
     .returning();
 

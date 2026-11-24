@@ -15,6 +15,8 @@ export default async function Home() {
     orderBy: desc(todoItems.createdAt),
   });
 
+  const allTags = [...new Set(todos.flatMap((todo) => todo.tags ?? []))].sort();
+
   const pendingTodos = todos.filter((todo) => todo.status === TodoItemStatus.PENDING);
   const completedTodos = todos.filter((todo) => todo.status === TodoItemStatus.COMPLETED);
 
@@ -24,7 +26,7 @@ export default async function Home() {
 
       <main className="flex-grow">
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <CreateTodoForm userId={userId} />
+          <CreateTodoForm userId={userId} allTags={allTags} />
 
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Pending Tasks ({pendingTodos.length})</h2>
@@ -33,7 +35,7 @@ export default async function Home() {
             ) : (
               <div>
                 {pendingTodos.map((todo) => (
-                  <TodoItemComponent key={todo.id} todo={todo} />
+                  <TodoItemComponent key={todo.id} todo={todo} allTags={allTags} />
                 ))}
               </div>
             )}
@@ -46,7 +48,7 @@ export default async function Home() {
             ) : (
               <div>
                 {completedTodos.map((todo) => (
-                  <TodoItemComponent key={todo.id} todo={todo} />
+                  <TodoItemComponent key={todo.id} todo={todo} allTags={allTags} />
                 ))}
               </div>
             )}
