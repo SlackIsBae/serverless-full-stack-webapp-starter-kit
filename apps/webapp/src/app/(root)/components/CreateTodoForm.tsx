@@ -9,8 +9,10 @@ import { createTodoSchema } from '../schemas';
 import { toast } from 'sonner';
 import { useEventBus } from '@/hooks/use-event-bus';
 import { useRouter } from 'next/navigation';
+import { Controller } from 'react-hook-form';
+import TagInput from '@/components/TagInput';
 
-export default function CreateTodoForm(props: { userId: string }) {
+export default function CreateTodoForm(props: { userId: string; allTags: string[] }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const slot = useSyncExternalStore(
     () => () => {},
@@ -28,7 +30,7 @@ export default function CreateTodoForm(props: { userId: string }) {
   });
 
   const {
-    form: { register, formState, reset },
+    form: { register, formState, reset, control },
     action,
     handleSubmitWithAction,
   } = useHookFormAction(createTodo, zodResolver(createTodoSchema), {
@@ -46,6 +48,7 @@ export default function CreateTodoForm(props: { userId: string }) {
       defaultValues: {
         title: '',
         description: '',
+        tags: [],
       },
     },
   });
@@ -95,6 +98,19 @@ export default function CreateTodoForm(props: { userId: string }) {
           {formState.errors.description && (
             <p className="mt-1 text-sm text-red-600">{formState.errors.description.message}</p>
           )}
+        </div>
+
+        <div>
+          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
+            Tags
+          </label>
+          <Controller
+            control={control}
+            name="tags"
+            render={({ field }) => (
+              <TagInput id="tags" value={field.value} onChange={field.onChange} suggestions={props.allTags} />
+            )}
+          />
         </div>
 
         <div className="flex justify-end space-x-2">
