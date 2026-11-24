@@ -1,1 +1,0 @@
-ALTER TABLE "TodoItem" ADD COLUMN "owner" text;
