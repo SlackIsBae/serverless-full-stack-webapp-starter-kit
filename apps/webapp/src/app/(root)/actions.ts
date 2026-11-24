@@ -14,14 +14,15 @@ import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { runJob } from '@/lib/jobs';
 import { normalizeTags } from '@/lib/tags';
+import { normalizeOwner } from '@/lib/owner';
 
 export const createTodo = authActionClient.inputSchema(createTodoSchema).action(async ({ parsedInput, ctx }) => {
-  const { title, description, tags } = parsedInput;
+  const { title, description, tags, owner } = parsedInput;
   const { userId } = ctx;
 
   const [todo] = await db
     .insert(todoItems)
-    .values({ title, description, userId, status: 'PENDING', tags: normalizeTags(tags) })
+    .values({ title, description, userId, status: 'PENDING', tags: normalizeTags(tags), owner: normalizeOwner(owner) })
     .returning();
 
   revalidatePath('/');
@@ -29,12 +30,12 @@ export const createTodo = authActionClient.inputSchema(createTodoSchema).action(
 });
 
 export const updateTodo = authActionClient.inputSchema(updateTodoSchema).action(async ({ parsedInput, ctx }) => {
-  const { id, title, description, status, tags } = parsedInput;
+  const { id, title, description, status, tags, owner } = parsedInput;
   const { userId } = ctx;
 
   const [todo] = await db
     .update(todoItems)
-    .set({ title, description, status, tags: normalizeTags(tags), updatedAt: new Date() })
+    .set({ title, description, status, tags: normalizeTags(tags), owner: normalizeOwner(owner), updatedAt: new Date() })
     .where(and(eq(todoItems.id, id), eq(todoItems.userId, userId)))
     .returning();
 
