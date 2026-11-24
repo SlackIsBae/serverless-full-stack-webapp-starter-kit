@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hooks';
 import { createTodo } from '../actions';
@@ -11,6 +12,11 @@ import { useRouter } from 'next/navigation';
 
 export default function CreateTodoForm(props: { userId: string }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const slot = useSyncExternalStore(
+    () => () => {},
+    () => document.getElementById('header-actions'),
+    () => null,
+  );
   const router = useRouter();
 
   useEventBus({
@@ -45,16 +51,17 @@ export default function CreateTodoForm(props: { userId: string }) {
   });
 
   if (!isFormOpen) {
-    return (
-      <div className="mb-6">
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          + Add New Todo
-        </button>
-      </div>
-    );
+    return slot
+      ? createPortal(
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="inline-flex items-center px-3 sm:px-4 py-2 border border-white/60 text-sm font-medium rounded-md shadow-sm whitespace-nowrap text-white bg-indigo-500 hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-indigo-600 focus:ring-white"
+          >
+            + Add New Todo
+          </button>,
+          slot,
+        )
+      : null;
   }
 
   return (
