@@ -15,6 +15,13 @@
       "when": 1795543606242,
       "tag": "0002_exotic_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795554704107,
+      "tag": "0003_daffy_venom",
+      "breakpoints": true
     }
   ]
 }

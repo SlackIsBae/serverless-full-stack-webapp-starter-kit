@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { Controller } from 'react-hook-form';
 import TagInput from '@/components/TagInput';
 import TagChip from '@/components/TagChip';
+import { ownerInitials } from '@/lib/owner';
+import { todoPicture } from '@/lib/todoPicture';
 import type { todoItems } from '@repo/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
 
@@ -53,6 +55,7 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
         description: todo.description,
         status: todo.status as TodoItemStatus,
         tags: todo.tags ?? [],
+        owner: todo.owner ?? '',
       },
     },
   });
@@ -132,6 +135,18 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
           </div>
 
           <div>
+            <label htmlFor={`owner-${todo.id}`} className="block text-sm font-medium text-foreground">
+              Owner
+            </label>
+            <input
+              id={`owner-${todo.id}`}
+              {...registerUpdate('owner')}
+              placeholder="Who owns this task? (optional)"
+              className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
             <label htmlFor={`tags-${todo.id}`} className="block text-sm font-medium text-foreground">
               Tags
             </label>
@@ -169,9 +184,20 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
     // <article> labels each todo for assistive technology and enables scoped E2E locators (role "article").
     <article
       aria-labelledby={`todo-title-${todo.id}`}
-      className={`border p-4 rounded-md shadow-sm mb-4 ${todo.status === TodoItemStatus.COMPLETED ? 'bg-muted' : 'bg-card'}`}
+      className={`relative overflow-hidden border p-4 rounded-md shadow-sm mb-4 ${todo.status === TodoItemStatus.COMPLETED ? 'bg-muted' : 'bg-card'}`}
     >
-      <div className="flex items-start justify-between">
+      {/* Decorative picture: soft gradient plus a large faded emoji on the right. Text sits above it. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-indigo-500/10 dark:to-indigo-400/15"
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-2 top-1/2 -translate-y-1/2 select-none text-8xl leading-none opacity-20 dark:opacity-25"
+      >
+        {todoPicture(todo.description)}
+      </span>
+      <div className="relative flex items-start justify-between">
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -198,6 +224,17 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
                   <TagChip key={tag} tag={tag} />
                 ))}
               </div>
+            )}
+            {todo.owner && (
+              <p className="mt-1 flex items-center gap-1.5 text-xs text-foreground">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-semibold text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100"
+                >
+                  {ownerInitials(todo.owner)}
+                </span>
+                <span>Owner: {todo.owner}</span>
+              </p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
               Created: {new Date(todo.createdAt).toLocaleDateString()}
