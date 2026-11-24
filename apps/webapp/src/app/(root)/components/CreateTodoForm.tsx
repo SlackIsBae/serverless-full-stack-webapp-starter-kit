@@ -68,24 +68,26 @@ export default function CreateTodoForm(props: { userId: string; allTags: string[
   }
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">Create New Todo</h2>
+    <div className="bg-card shadow-md rounded-lg p-6 mb-6">
+      <h2 className="text-lg font-medium text-foreground mb-4">Create New Todo</h2>
       <form onSubmit={handleSubmitWithAction} className="space-y-4">
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="title" className="block text-sm font-medium text-foreground">
             Title
           </label>
           <input
             id="title"
             {...register('title')}
             placeholder="Your TODO item title."
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
-          {formState.errors.title && <p className="mt-1 text-sm text-red-600">{formState.errors.title.message}</p>}
+          {formState.errors.title && (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formState.errors.title.message}</p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="description" className="block text-sm font-medium text-foreground">
             Description
           </label>
           <textarea
@@ -93,15 +95,15 @@ export default function CreateTodoForm(props: { userId: string; allTags: string[
             {...register('description')}
             rows={3}
             placeholder="Describe your TODO item."
-            className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
           {formState.errors.description && (
-            <p className="mt-1 text-sm text-red-600">{formState.errors.description.message}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formState.errors.description.message}</p>
           )}
         </div>
 
         <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="tags" className="block text-sm font-medium text-foreground">
             Tags
           </label>
           <Controller
@@ -117,7 +119,7 @@ export default function CreateTodoForm(props: { userId: string; allTags: string[
           <button
             type="button"
             onClick={() => setIsFormOpen(false)}
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-secondary-foreground bg-secondary hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
           >
             Cancel
           </button>

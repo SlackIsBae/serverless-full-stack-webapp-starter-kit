@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header() {
   return (
@@ -13,6 +14,7 @@ export default function Header() {
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Slot filled by CreateTodoForm (portal) with the Add New Todo button. */}
             <div id="header-actions" className="flex items-center" />
+            <ThemeToggle />
             {/* Use <a> instead of <Link> to trigger a full-page navigation.
                 The sign-out route returns a 302 redirect to Cognito, which
                 would cause a CORS error if fetched via client-side navigation. */}

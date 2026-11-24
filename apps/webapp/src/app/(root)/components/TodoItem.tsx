@@ -94,43 +94,45 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
 
   if (isEditing) {
     return (
-      <div className="border p-4 rounded-md shadow-sm mb-4 bg-white">
+      <div className="border p-4 rounded-md shadow-sm mb-4 bg-card">
         <form onSubmit={handleUpdate} className="space-y-4">
           <input type="hidden" {...registerUpdate('id')} value={todo.id} />
           <input type="hidden" {...registerUpdate('status')} value={todo.status} />
 
           <div>
-            <label htmlFor={`title-${todo.id}`} className="block text-sm font-medium text-gray-700">
+            <label htmlFor={`title-${todo.id}`} className="block text-sm font-medium text-foreground">
               Title
             </label>
             <input
               id={`title-${todo.id}`}
               type="text"
               {...registerUpdate('title')}
-              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             />
             {updateFormState.errors.title && (
-              <p className="mt-1 text-sm text-red-600">{updateFormState.errors.title.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{updateFormState.errors.title.message}</p>
             )}
           </div>
 
           <div>
-            <label htmlFor={`description-${todo.id}`} className="block text-sm font-medium text-gray-700">
+            <label htmlFor={`description-${todo.id}`} className="block text-sm font-medium text-foreground">
               Description
             </label>
             <textarea
               id={`description-${todo.id}`}
               {...registerUpdate('description')}
               rows={3}
-              className="mt-1 p-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="mt-1 p-2 block w-full rounded-md border-input bg-background text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             />
             {updateFormState.errors.description && (
-              <p className="mt-1 text-sm text-red-600">{updateFormState.errors.description.message}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {updateFormState.errors.description.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label htmlFor={`tags-${todo.id}`} className="block text-sm font-medium text-gray-700">
+            <label htmlFor={`tags-${todo.id}`} className="block text-sm font-medium text-foreground">
               Tags
             </label>
             <Controller
@@ -146,7 +148,7 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-secondary-foreground bg-secondary hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
             >
               Cancel
             </button>
@@ -167,7 +169,7 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
     // <article> labels each todo for assistive technology and enables scoped E2E locators (role "article").
     <article
       aria-labelledby={`todo-title-${todo.id}`}
-      className={`border p-4 rounded-md shadow-sm mb-4 ${todo.status === TodoItemStatus.COMPLETED ? 'bg-gray-50' : 'bg-white'}`}
+      className={`border p-4 rounded-md shadow-sm mb-4 ${todo.status === TodoItemStatus.COMPLETED ? 'bg-muted' : 'bg-card'}`}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center">
@@ -176,17 +178,17 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
             checked={todo.status === TodoItemStatus.COMPLETED}
             onChange={toggleStatus}
             disabled={statusStatus === 'executing'}
-            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-input rounded"
           />
           <div className="ml-3">
             <h3
               id={`todo-title-${todo.id}`}
-              className={`text-lg font-medium ${todo.status === TodoItemStatus.COMPLETED ? 'line-through text-gray-500' : 'text-gray-900'}`}
+              className={`text-lg font-medium ${todo.status === TodoItemStatus.COMPLETED ? 'line-through text-muted-foreground' : 'text-foreground'}`}
             >
               {todo.title}
             </h3>
             <p
-              className={`text-sm ${todo.status === TodoItemStatus.COMPLETED ? 'line-through text-gray-400' : 'text-gray-600'}`}
+              className={`text-sm ${todo.status === TodoItemStatus.COMPLETED ? 'line-through text-muted-foreground' : 'text-muted-foreground'}`}
             >
               {todo.description}
             </p>
@@ -197,28 +199,30 @@ export default function TodoItemComponent({ todo, allTags }: TodoItemProps) {
                 ))}
               </div>
             )}
-            <p className="text-xs text-gray-400 mt-1">Created: {new Date(todo.createdAt).toLocaleDateString()}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Created: {new Date(todo.createdAt).toLocaleDateString()}
+            </p>
           </div>
         </div>
         <div className="flex space-x-2">
           <button
             onClick={() => setIsEditing(true)}
             disabled={deleteStatus === 'executing' || statusStatus === 'executing' || translateStatus === 'executing'}
-            className="text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 disabled:opacity-50"
           >
             Edit
           </button>
           <button
             onClick={handleDelete}
             disabled={deleteStatus === 'executing' || statusStatus === 'executing' || translateStatus === 'executing'}
-            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50"
           >
             {deleteStatus === 'executing' ? 'Deleting...' : 'Delete'}
           </button>
           <button
             onClick={() => execute({ id: todo.id })}
             disabled={deleteStatus === 'executing' || statusStatus === 'executing' || translateStatus === 'executing'}
-            className="text-green-600 hover:text-green-900 disabled:opacity-50"
+            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 disabled:opacity-50"
           >
             {translateStatus === 'executing' ? 'Translating...' : 'Translate'}
           </button>

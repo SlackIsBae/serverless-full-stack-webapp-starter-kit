@@ -31,7 +31,7 @@ export default async function Home() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold mb-4">Pending Tasks ({pendingTodos.length})</h2>
             {pendingTodos.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No pending tasks. Great job!</p>
+              <p className="text-muted-foreground text-center py-4">No pending tasks. Great job!</p>
             ) : (
               <div>
                 {pendingTodos.map((todo) => (
@@ -44,7 +44,7 @@ export default async function Home() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Completed Tasks ({completedTodos.length})</h2>
             {completedTodos.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No completed tasks yet.</p>
+              <p className="text-muted-foreground text-center py-4">No completed tasks yet.</p>
             ) : (
               <div>
                 {completedTodos.map((todo) => (
