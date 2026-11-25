@@ -17,19 +17,13 @@ export async function translateJobHandler(params: TranslateJobPayload) {
   const translateClient = new TranslateClient({});
 
   const targetLanguage = 'ja';
-  const translate = (source: string) =>
-    translateClient.send(
-      new TranslateTextCommand({
-        Text: todoItem.title,
-        SourceLanguageCode: source,
-        TargetLanguageCode: targetLanguage,
-      }),
-    );
-  const translateResult = await translate('auto').catch((e) => {
-    if (e?.name !== 'AccessDeniedException') throw e;
-    console.warn('auto-detect denied, falling back to en');
-    return translate('en');
-  });
+  const translateResult = await translateClient.send(
+    new TranslateTextCommand({
+      Text: todoItem.title,
+      SourceLanguageCode: 'auto',
+      TargetLanguageCode: targetLanguage,
+    }),
+  );
 
   if (translateResult.TranslatedText) {
     await db.insert(todoItems).values({
